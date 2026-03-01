@@ -1,0 +1,9 @@
+apscheduler>=3.10
+python-dotenv>=1.0
+python-telegram-bot>=20.7
+pandas>=2.0
+numpy>=1.26
+requests>=2.31
+urllib3>=2.0
+rapidfuzz>=3.0
+pytz
