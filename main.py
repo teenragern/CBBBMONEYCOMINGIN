@@ -1,13 +1,15 @@
-"""
-main.py — CBB Betting Bot full pipeline
-Handles data sync, analysis, and alerts in one call.
-Called directly by scheduler.py on each scheduled run.
-"""
 import os
 import sys
+from dotenv import load_dotenv
+load_dotenv()
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from datetime import datetime
+import pytz
+
+EST = pytz.timezone('US/Eastern')
+
 from data.database   import get_connection, init_db
 from data.bdl_client  import BallDontLieClient
 from data.odds_client import OddsAPIClient
@@ -188,7 +190,7 @@ def run_analysis(conn, notifier: TelegramNotifier) -> int:
                 (game_id, date, matchup, pick, line, projected_line, confidence, reasoning, units_wagered)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            result['game_id'], datetime.now().strftime('%Y-%m-%d'),
+            result['game_id'], datetime.now(EST).strftime('%Y-%m-%d'),
             result['matchup'], result['recommendation'],
             spread_h, result['projections']['projected_spread'],
             result['confidence'], result['reasons'], result.get('wager_pct', 0)
@@ -221,6 +223,9 @@ def get_season_record(conn):
     return wins, losses
 
 def main():
+    from dotenv import load_dotenv
+    load_dotenv()
+    
     init_db()
     conn     = get_connection()
     notifier = TelegramNotifier()
@@ -229,7 +234,7 @@ def main():
     bets_sent  = run_analysis(conn, notifier)
 
     ats_w, ats_l = get_season_record(conn)
-    now = datetime.now().strftime('%I:%M %p')
+    now = datetime.now(EST).strftime('%I:%M %p')
 
     notifier.send_status_update(
         last_run     = f"Today {now}",

@@ -1,5 +1,8 @@
 import sqlite3
 import datetime
+import pytz
+
+EST = pytz.timezone('US/Eastern')
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -73,7 +76,7 @@ def check_stop_loss(conn):
     is_locked = status_row and status_row[0] == 'True'
 
     # Calculate 7-day PnL
-    seven_days_ago = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+    seven_days_ago = (datetime.datetime.now(EST) - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
     
     cursor.execute('''
         SELECT SUM(units_won) 

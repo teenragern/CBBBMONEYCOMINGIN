@@ -1,7 +1,10 @@
 import os
 import asyncio
 from datetime import datetime
+import pytz
 from telegram import Bot
+
+EST = pytz.timezone('US/Eastern')
 
 class TelegramNotifier:
     def __init__(self):
@@ -29,7 +32,7 @@ class TelegramNotifier:
     # ─── Daily Schedule ───────────────────────────────────────────────────────
 
     def send_daily_summary(self, slate_size: int, expected_bets: int):
-        date = datetime.now().strftime('%A, %B %d')
+        date = datetime.now(EST).strftime('%A, %B %d')
         msg  = (
             f"📅 <b>CBB Daily Summary — {date}</b>\n\n"
             f"🏀 Games on slate today: <b>{slate_size}</b>\n"
