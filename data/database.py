@@ -48,9 +48,15 @@ def init_db():
             home_team TEXT,
             away_team TEXT,
             spread_home REAL,
+            spread_home_bookmaker TEXT,
+            spread_away REAL,
+            spread_away_bookmaker TEXT,
             total_over REAL,
-            opening_spread_home REAL,
-            opening_total REAL,
+            total_over_bookmaker TEXT,
+            total_under REAL,
+            total_under_bookmaker TEXT,
+            market_avg_spread REAL,
+            market_avg_total REAL,
             commence_time TEXT,
             last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -67,8 +73,23 @@ def init_db():
             projected_line REAL,
             confidence TEXT,
             reasoning TEXT,
+            units_wagered REAL,
+            units_won REAL,
             outcome TEXT
         )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS system_status (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Initialize circuit breaker to ACTIVE
+    cursor.execute('''
+        INSERT OR IGNORE INTO system_status (key, value) VALUES ('stop_loss_triggered', 'False')
     ''')
 
     cursor.execute('''

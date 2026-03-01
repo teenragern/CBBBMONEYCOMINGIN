@@ -60,9 +60,7 @@ class TelegramNotifier:
 
     def send_bet_alert(
         self, game_id, matchup, commence_time,
-        market_spread, proj_spread,
-        market_total, proj_total,
-        confidence, reasons, signals=0,
+        result,
         conn=None
     ):
         # Duplicate guard
@@ -89,19 +87,54 @@ class TelegramNotifier:
         away_team = teams[0]
         home_team = teams[1] if len(teams) > 1 else "Home"
 
-        # Spread direction
-        spread_edge = proj_spread - market_spread
-        bet_spread_side = home_team if spread_edge < 0 else away_team
-        bet_total_side  = "OVER" if proj_total > market_total else "UNDER"
+        # Unpack result
+        confidence = result.get('confidence', 'LOW')
+        signals = result.get('signals', 0)
+        reasons = result.get('reasons', '')
+        wager_pct = result.get('wager_pct', 0.0)
+        
+        proj_spread = result['projections']['projected_spread']
+        proj_total = result['projections']['projected_total']
+
+        # Determine best available bets based on the edges found
+        spread_msg = "PASS"
+        total_msg = "PASS"
+        
+        if result.get('target_spread'):
+            target_spread = result['target_spread']
+            target_side = result['target_spread_side']
+            target_bookie = result['target_spread_bookie']
+            avg_spread = result.get('market_avg_spread', target_spread)
+            team_name = home_team if target_side == "Home" else away_team
+            
+            spread_msg = (
+                f"   My Line: {proj_spread:.1f} → ✅ <b>BET {team_name}</b>\n"
+                f"   Best line: {target_bookie} {target_spread:+} (market avg {avg_spread:+})"
+            )
+        else:
+            spread_msg = f"   My Line: {proj_spread:.1f} → PASS (No Edge)"
+
+        if result.get('target_total'):
+            target_total = result['target_total']
+            target_side = result['target_total_side']
+            target_bookie = result['target_total_bookie']
+            avg_total = result.get('market_avg_total', target_total)
+            
+            total_msg = (
+                f"   My Total: {proj_total:.1f} → ✅ <b>BET {target_side}</b>\n"
+                f"   Best line: {target_bookie} {target_total} (market avg {avg_total:.1f})"
+            )
+        else:
+            total_msg = f"   My Total: {proj_total:.1f} → PASS (No Edge)"
 
         msg = (
             f"🏀 <b>ALERT: {matchup}</b>\n"
             f"🕐 Tip: {time_str}\n\n"
-            f"📊 <b>SPREAD:</b> {market_spread}\n"
-            f"   My Line: {proj_spread:.1f} → ✅ BET {bet_spread_side}\n\n"
-            f"📈 <b>TOTAL:</b> {market_total}\n"
-            f"   My Total: {proj_total:.1f} → ✅ BET {bet_total_side}\n\n"
-            f"💰 <b>MONEYLINE:</b> PASS\n\n"
+            f"📊 <b>SPREAD:</b>\n"
+            f"{spread_msg}\n\n"
+            f"📈 <b>TOTAL:</b>\n"
+            f"{total_msg}\n\n"
+            f"💰 <b>WAGER:</b> {wager_pct:.1f}% (Kelly)\n\n"
             f"⚡ <b>Confidence:</b> {confidence} ({signals}/4 signals)\n"
             f"📝 {reasons}"
         )
